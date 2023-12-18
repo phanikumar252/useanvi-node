@@ -20,7 +20,7 @@ const cors = require('cors');
 const app = express();
 app.use(express.json());
 app.use(cors({
-	origin: 'http://localhost:3000'
+	origin: ['http://localhost:3000', 'http://52.34.40.39:8900']
 }));
 
 const getTemplates = () => {
