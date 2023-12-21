@@ -14,9 +14,13 @@
     "@anvilco/anvil": "^3.2.0",
     "@dropbox/sign": "^1.2.2",
     "axios": "^1.6.0",
+    "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "ejs": "latest",
     "express": "latest",
-    "form-data": "^4.0.0"
+    "form-data": "^4.0.0",
+    "graphql": "^16.8.1",
+    "graphql-request": "^6.1.0",
+    "node-fetch": "^3.3.2"
   }
 }
