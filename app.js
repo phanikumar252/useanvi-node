@@ -95,25 +95,25 @@ const signaturePacketVariables = {
 				// },
 			],
 		},
-		{
-			id: "clientSignature",
-			// Important! This tells Anvil that our app will be
-			// notifying the signer when it is their turn to sign
-			signerType: 'embedded',
-			// Important! This tells Anvil to redirect to this URL
-			// after the signer has completed their signatures
-			// redirectURL: 'http://localhost:3000/CandidateEsign/thankspage',
-			tokenValidForMinutes: 60 * 24 * 3,
-			// fields left undefined to be filled using webform input
-			name: "Anil",
-			email: "akunde@ovahq.com",
-			fields: [
-				// {
-				// 	fileId: 'payroll1',
-				// 	fieldId: 'signatureOne',
-				// },
-			],
-		},
+		// {
+		// 	id: "clientSignature",
+		// 	// Important! This tells Anvil that our app will be
+		// 	// notifying the signer when it is their turn to sign
+		// 	signerType: 'embedded',
+		// 	// Important! This tells Anvil to redirect to this URL
+		// 	// after the signer has completed their signatures
+		// 	// redirectURL: 'http://localhost:3000/CandidateEsign/thankspage',
+		// 	tokenValidForMinutes: 60 * 24 * 3,
+		// 	// fields left undefined to be filled using webform input
+		// 	name: "Anil",
+		// 	email: "akunde@ovahq.com",
+		// 	fields: [
+		// 		// {
+		// 		// 	fileId: 'payroll1',
+		// 		// 	fieldId: 'signatureOne',
+		// 		// },
+		// 	],
+		// },
 	],
 	data: {
 		payloads: {
@@ -500,12 +500,12 @@ app.post('/createEsign', async (req, res) => {
 		let signFields = []
 		signerFields.forEach(element => {
 			signFields.push({
-				fileId: signaturePacketVariables.files[0].id,
+				fileId: signaturePacketVarsignFieldsiables.files[0].id,
 				fieldId: element
 			})
 		});
-		signaturePacketVariables.signers[0].fields = [{ fileId: 'payroll1', fieldId: 'salesSignature' }]
-		signaturePacketVariables.signers[1].fields = [{ fileId: 'payroll1', fieldId: 'clientSignature' }]
+		signaturePacketVariables.signers[0].fields = signFields
+		// signaturePacketVariables.signers[1].fields = [{ fileId: 'payroll1', fieldId: 'clientSignature' }]
 
 		console.log(JSON.stringify(signaturePacketVariables))
 		// console.log(signaturePacketVariables, 'signaturePacketVariables')
