@@ -88,6 +88,7 @@ const signaturePacketVariables = {
 			// fields left undefined to be filled using webform input
 			name: undefined,
 			email: undefined,
+			routingOrder: 1,
 			fields: [
 				// {
 				// 	fileId: 'payroll1',
@@ -95,25 +96,26 @@ const signaturePacketVariables = {
 				// },
 			],
 		},
-		// {
-		// 	id: "clientSignature",
-		// 	// Important! This tells Anvil that our app will be
-		// 	// notifying the signer when it is their turn to sign
-		// 	signerType: 'embedded',
-		// 	// Important! This tells Anvil to redirect to this URL
-		// 	// after the signer has completed their signatures
-		// 	// redirectURL: 'http://localhost:3000/CandidateEsign/thankspage',
-		// 	tokenValidForMinutes: 60 * 24 * 3,
-		// 	// fields left undefined to be filled using webform input
-		// 	name: "Anil",
-		// 	email: "akunde@ovahq.com",
-		// 	fields: [
-		// 		// {
-		// 		// 	fileId: 'payroll1',
-		// 		// 	fieldId: 'signatureOne',
-		// 		// },
-		// 	],
-		// },
+		{
+			id: "signer2",
+			// Important! This tells Anvil that our app will be
+			// notifying the signer when it is their turn to sign
+			signerType: 'embedded',
+			// Important! This tells Anvil to redirect to this URL
+			// after the signer has completed their signatures
+			// redirectURL: 'http://localhost:3000/CandidateEsign/thankspage',
+			tokenValidForMinutes: 60 * 24 * 3,
+			// fields left undefined to be filled using webform input
+			name: "Anil",
+			email: "akunde@ovahq.com",
+			routingOrder: 1,
+			fields: [
+				// {
+				// 	fileId: 'payroll1',
+				// 	fieldId: 'signatureOne',
+				// },
+			],
+		},
 	],
 	data: {
 		payloads: {
@@ -505,7 +507,7 @@ app.post('/createEsign', async (req, res) => {
 			})
 		});
 		signaturePacketVariables.signers[0].fields = [{ fileId: 'payroll1', fieldId: 'salesSignature' }]
-		// signaturePacketVariables.signers[1].fields = [{ fileId: 'payroll1', fieldId: 'clientSignature' }]
+		signaturePacketVariables.signers[1].fields = [{ fileId: 'payroll1', fieldId: 'clientSignature' }]
 
 		console.log(JSON.stringify(signaturePacketVariables))
 		// console.log(signaturePacketVariables, 'signaturePacketVariables')
@@ -528,19 +530,36 @@ app.post('/createEsign', async (req, res) => {
 
 });
 
-app.post('/createSignUrl', async (req, res) => {
-
+app.post('/createEtchPacket', async (req, resp) => {
 	try {
-		const { signaturePacketEid, clientUserId } = req.body
+		const { signaturePacketEid } = req.body
 		const { data } = await anvilClient.getEtchPacket({
 			variables: { eid: signaturePacketEid },
 		})
 		console.log(signaturePacketEid, 'signaturePacketEid')
 		// We only have 1 signer for this signature packet
-		console.log(data, "data here")
-		const signers = data.data.etchPacket.documentGroup.signers
-		const signerEid = signers[0].eid
-		console.log(signers, 'signers', signerEid)
+		// console.log(data, "data here")
+		const signers = data.data.etchPacket
+		resp.send(signers)
+	}
+	catch (e) {
+		resp.send(e)
+	}
+})
+
+app.post('/createSignUrl', async (req, res) => {
+
+	try {
+		const { signerEid, clientUserId } = req.body
+		// const { data } = await anvilClient.getEtchPacket({
+		// 	variables: { eid: signaturePacketEid },
+		// })
+		// console.log(signaturePacketEid, 'signaturePacketEid')
+		// // We only have 1 signer for this signature packet
+		// console.log(data, "data here")
+		// const signers = data.data.etchPacket.documentGroup.signers
+		// const signerEid = signers[1].eid
+		console.log(signerEid, 'signers', clientUserId)
 		// The signing URL generated here is used to
 		// embed the signing page into our app
 		const { url } = await anvilClient.generateEtchSignUrl({
