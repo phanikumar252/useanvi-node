@@ -500,11 +500,11 @@ app.post('/createEsign', async (req, res) => {
 		let signFields = []
 		signerFields.forEach(element => {
 			signFields.push({
-				fileId: signaturePacketVarsignFieldsiables.files[0].id,
+				fileId: signaturePacketVariables.files[0].id,
 				fieldId: element
 			})
 		});
-		signaturePacketVariables.signers[0].fields = signFields
+		signaturePacketVariables.signers[0].fields = [{ fileId: 'payroll1', fieldId: 'salesSignature' }]
 		// signaturePacketVariables.signers[1].fields = [{ fileId: 'payroll1', fieldId: 'clientSignature' }]
 
 		console.log(JSON.stringify(signaturePacketVariables))
