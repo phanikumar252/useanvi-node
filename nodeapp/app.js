@@ -13,14 +13,26 @@ var express = require('express');
 const axios = require('axios');
 const FormData = require('form-data');
 const cors = require('cors');
+const dotenv = require('dotenv');
+dotenv.config();
 
-
-
-
+const AWS = require('aws-sdk');
+var quicksightClient = new AWS.Service({
+	apiConfig: require('./node_modules/aws-sdk/apis/quicksight-2018-04-01.min.json'),
+	region: 'us-west-2',
+});
+console.log(process.env.AWS_ACCESS_KEY_ID, 'process.env.AWS_ACCESS_KEY_ID')
+const SESConfig = {
+	apiVersion: "2018-04-01",
+	accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+	secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+	region: "us-east-1"
+}
+AWS.config.update(SESConfig);
 const app = express();
 app.use(express.json());
 app.use(cors({
-	origin: ['http://localhost:3000', 'http://52.34.40.39:8900']
+	origin: ['http://localhost:3001', 'http://52.34.40.39:8900']
 }));
 
 const getTemplates = () => {
@@ -386,3 +398,67 @@ app.post('/createSignUrl', async (req, res) => {
 	}
 })
 
+app.get('/generateEmbeddedUrl', (req, res) => {
+	// let data = {
+	// 	"AllowedDomains": ["http://localhost:3000"],
+	// 	"ExperienceConfiguration": {
+	// 		"QuickSightConsole": {
+	// 			"FeatureConfigurations": {
+	// 				"StatePersistence": {
+	// 					"Enabled": true
+	// 				}
+	// 			},
+	// 			"InitialPath": "/start"
+	// 		}
+	// 	},
+	// 	"SessionLifetimeInMinutes": 600,
+	// 	"UserArn": "arn:aws:iam::068652499116:user/shantanu"
+	// }
+	// try {
+	// 	var config = {
+	// 		method: 'post',
+	// 		url: 'https://us-west-2.quicksight.aws.amazon.com/sn/accounts/068652499116/embed-url/registered-user',
+	// 		headers: {
+	// 			'Content-Type': 'application/json',
+
+	// 		},
+	// 		data: data
+	// 	};
+
+	// 	axios(config)
+	// 		.then(function (response) {
+	// 			console.log(res, 'res')
+	// 			res.send(response.data)
+	// 			// console.log(JSON.stringify(response.data));
+	// 		})
+	// 		.catch(function (error) {
+
+	// 			let { errors } = error
+	// 			console.log(JSON.stringify(errors), "error", { ...error });
+	// 			res.send(error)
+	// 		});
+	// }
+	// catch (e) {
+	// 	console.log(e, 'e')
+	// 	res.send(e)
+	// }
+	quicksightClient.generateEmbedUrlForRegisteredUser({
+		'AwsAccountId': '068652499116',
+		'ExperienceConfiguration': {
+			'QuickSightConsole': {
+				'InitialPath': '/start'
+			}
+		},
+		'UserArn': 'arn:aws:quicksight:us-west-2:068652499116:user/default/shantanu',
+		'AllowedDomains': ["http://localhost:3001"],
+		'SessionLifetimeInMinutes': 100
+	}, function (err, data) {
+		console.log('Errors: ');
+		console.log(err);
+		if (data) {
+			res.send(data)
+		}
+		console.log('Response: ');
+		console.log(data);
+	});
+})

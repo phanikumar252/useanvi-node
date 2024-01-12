@@ -5,7 +5,7 @@
   "main": "app.js",
   "type": "module",
   "scripts": {
-    "start": "node --experimental-modules app.js",
+    "start": "set NODE_ENV=development && node --experimental-modules app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Adem Cemil YALCIN",
@@ -13,9 +13,11 @@
   "dependencies": {
     "@anvilco/anvil": "^3.2.0",
     "@dropbox/sign": "^1.2.2",
+    "aws-sdk": "^2.1533.0",
     "axios": "^1.6.0",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
     "ejs": "latest",
     "express": "latest",
     "form-data": "^4.0.0",

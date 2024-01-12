@@ -4,6 +4,8 @@ import fs from 'fs'
 import Anvil from '@anvilco/anvil'
 import { createRequire } from "module";
 import path from 'path';
+
+
 const __dirname = path.resolve();
 const require = createRequire(import.meta.url);
 var http = require('http');
@@ -11,30 +13,46 @@ var express = require('express');
 const axios = require('axios');
 const FormData = require('form-data');
 const cors = require('cors');
-const { request } = require('graphql-request');
-const bodyParser = require('body-parser')
+const dotenv = require('dotenv');
+dotenv.config();
 
-
+const AWS = require('aws-sdk');
+var quicksightClient = new AWS.Service({
+	apiConfig: require('./node_modules/aws-sdk/apis/quicksight-2018-04-01.min.json'),
+	region: 'us-west-2',
+});
+console.log(process.env.AWS_ACCESS_KEY_ID, 'process.env.AWS_ACCESS_KEY_ID')
+const SESConfig = {
+	apiVersion: "2018-04-01",
+	accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+	secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+	region: "us-east-1"
+}
+AWS.config.update(SESConfig);
 const app = express();
-app.use(express.json({ limit: "50mb", type: "application/json" }))
-app.use(express.urlencoded({ extended: true }));
-app.use(express.text({ type: 'application/json' }))
-
+app.use(express.json());
 app.use(cors({
-	origin: "*"
+	origin: ['http://localhost:3001', 'http://52.34.40.39:8900']
 }));
+
+const getTemplates = () => {
+
+}
+
+
+
+
+
+
+
+
+
 
 // The ID of the PDF template to fill
 const pdfTemplateID = '2Oac1eKLbkYtj8NASclu'
 // Your API key from your Anvil organization settings
-const apiKey = '3omv8BJAYGmo8xscUj59vu9zpvcsl4Tu'
+const apiKey = 'TbyeNvYb8Y9aS2P6T8PyIqslc5wSLS1Q'
 const anvilClient = new Anvil({ apiKey })
-
-const encodedToken = Buffer.from('3omv8BJAYGmo8xscUj59vu9zpvcsl4Tu:', 'ascii').toString('base64')
-const basicAuth = `Basic ${encodedToken}`
-
-const endpoint = `https://graphql.useanvil.com'`
-
 
 // console.log(anvilClient, 'anvilClient')
 const prefillData = async () => {
@@ -71,9 +89,55 @@ const templateW4 = {
 
 const packetFiles = [templateW4]
 
+const packetSigners = [
+	{
+		id: "signer1",
+		// Important! This tells Anvil that our app will be
+		// notifying the signer when it is their turn to sign
+		signerType: 'embedded',
+		// Important! This tells Anvil to redirect to this URL
+		// after the signer has completed their signatures
+		redirectURL: '/onboarding/finish',
+
+		// fields left undefined to be filled using webform input
+		name: "phani",
+		email: "akunde@ovahq.com",
+		tokenValidForMinutes: 60 * 24 * 3,
+		fields: [
+			{
+				fileId: 'payroll1',
+				fieldId: 'signatureOne',
+			},
+		],
+	}
+]
+
+const encodedToken = Buffer.from('TbyeNvYb8Y9aS2P6T8PyIqslc5wSLS1Q:', 'ascii').toString('base64')
+const basicAuth = `Basic ${encodedToken}`
+
+// const packetPrefillData = {
+// 	payroll1: {
+// 		data: {
+// 			// fields left undefined to be filled using webform input
+// 			"accountNumber0": "45785587",
+// 			"routingNumber0": "789854225",
+// 			"accountNumber1": "125478958",
+// 			"jointAccountHolderName": {
+// 				"firstName": "Phani kumar",
+// 				"mi": "",
+// 				"lastName": "Ankem"
+// 			},
+// 			"date": "2023-12-14",
+// 			"routingNumber1": "32545654",
+// 		},
+// 	},
+// }
+
+
+
 const signaturePacketVariables = {
 	isDraft: false,
-	isTest: true,
+	isTest: false,
 	files: packetFiles,
 	signers: [
 		{
@@ -88,34 +152,13 @@ const signaturePacketVariables = {
 			// fields left undefined to be filled using webform input
 			name: undefined,
 			email: undefined,
-			routingOrder: 1,
 			fields: [
 				// {
 				// 	fileId: 'payroll1',
 				// 	fieldId: 'signatureOne',
 				// },
 			],
-		},
-		{
-			id: "signer2",
-			// Important! This tells Anvil that our app will be
-			// notifying the signer when it is their turn to sign
-			signerType: 'embedded',
-			// Important! This tells Anvil to redirect to this URL
-			// after the signer has completed their signatures
-			// redirectURL: 'http://localhost:3000/CandidateEsign/thankspage',
-			tokenValidForMinutes: 60 * 24 * 3,
-			// fields left undefined to be filled using webform input
-			name: "Anil",
-			email: "akunde@ovahq.com",
-			routingOrder: 1,
-			fields: [
-				// {
-				// 	fileId: 'payroll1',
-				// 	fieldId: 'signatureOne',
-				// },
-			],
-		},
+		}
 	],
 	data: {
 		payloads: {
@@ -159,7 +202,7 @@ app.get("/getTemplates", (request, response) => {
 			  __typename
 			}
 		  }`,
-		variables: { organizationSlug: "ask-consulting" }
+		variables: { organizationSlug: "ova-innovation-labs" }
 	});
 
 	// var username = 'TbyeNvYb8Y9aS2P6T8PyIqslc5wSLS1Q';
@@ -283,210 +326,7 @@ app.post("/getTemplateFields", (req, res) => {
 })
 
 
-app.post('/createTemplate', (req, resp) => {
 
-	let { title, file } = req.body
-	let data = JSON.stringify({
-		query: `mutation CreateCast(
-			$organizationEid: String
-			$title: String
-			$file: Upload!
-			$isTemplate: Boolean
-			$detectFields: Boolean
-		  ) {
-			createCast(
-			  organizationEid: $organizationEid
-			  title: $title
-			  file: $file
-			  isTemplate: $isTemplate
-			  detectFields: $detectFields
-			) {
-			  id
-			  eid
-			  name
-			  title
-			  config
-			  location
-			  createdAt
-			  updatedAt
-			  isTemplate
-			  organization {
-				id
-				eid
-				slug
-				name
-			  }
-			}
-		  }
-		  `,
-		variables: {
-			"organizationEid": "f2AzCk56ltQW3xPZB2Rt",
-			"title": title,
-			"file": file,
-			"isTemplate": true,
-			"detectFields": true
-		}
-	});
-
-	var config = {
-		method: 'post',
-		maxBodyLength: Infinity,
-		url: 'https://graphql.useanvil.com',
-		headers: {
-			'Content-Type': 'application/json',
-			'Authorization': basicAuth
-		},
-		data: data
-	};
-
-	axios(config)
-		.then(function (response) {
-			// console.log(res, 'res')
-			resp.send(response.data)
-			// console.log(JSON.stringify(response.data));
-		})
-		.catch(function (error) {
-
-			let { errors } = error
-			console.log(JSON.stringify(errors), "error", { ...error });
-			resp.send(error)
-		});
-
-})
-
-
-app.post('/editTemplate', (req, resp) => {
-
-	let { castId } = req.body
-	let data = JSON.stringify({
-		query: `mutation generateEmbedURL(
-			$type: String!,
-			$eid: String!,
-			$validUntil: String,
-			$validForSeconds: Int,
-			$options: JSON,
-			$metadata: JSON
-		  ) {
-			generateEmbedURL(
-			  type: $type,
-			  eid: $eid,
-			  validUntil: $validUntil,
-			  validForSeconds: $validForSeconds,
-			  options: $options,
-			  metadata: $metadata
-			) {
-			  requestTokenEid
-			  url
-			}
-		  }
-		  `,
-		variables: {
-			"type": "edit-pdf-template",
-			"eid": castId,
-			// "validUntil": "2024-06-12T01:43:50+00:00",
-			"validForSeconds": 86400,
-			"options": {
-				"mode": "preset-fields",
-				"pageTitle": "Title of the page",
-				"title": "Sidebar title",
-				description: 'Please draw fields indicated below.',
-				selectionDescription:
-					'Select the field that best represents the box drawn.',
-				showPageTitleBar: false,
-				// finishButtonText: 'Custom text',
-				// selectionAddAnotherFieldText: 'Plz add another field',
-				fields: [
-					// * `aliasId` can be anything you'd like: https://www.useanvil.com/docs/api/fill-pdf/#field-ids
-					// * All types: https://www.useanvil.com/docs/api/fill-pdf/#all-field-types
-					{
-						name: 'Full name',
-						type: 'fullName',
-						aliasId: 'name',
-						required: false,
-
-						// optional fields
-						alignment: 'center', // `left`, `center`, `right`
-						fontSize: '12',
-						fontWeight: 'boldItalic', // 'normal', `bold`, `boldItalic`, `italic`
-						fontFamily: 'Futura', // Any google font, 'Helvetica', 'Times new roman', 'Courier'
-						textColor: '#a00000',
-					},
-					{
-						name: 'Email',
-						type: 'email',
-						aliasId: 'email',
-						required: false,
-					},
-					{
-						name: 'Date of birth',
-						type: 'date',
-						aliasId: 'dob',
-						required: false,
-
-						// optional date fields:
-						format: 'MMMM Do YYYY', // see moment.js docs
-					},
-					{
-						name: 'Client signature',
-						type: 'signature',
-						aliasId: 'clientSignature',
-						required: false,
-					},
-					{
-						name: 'Sales signature',
-						type: 'signature',
-						aliasId: 'salesSignature',
-						required: false,
-					},
-					{
-						name: 'Client initials',
-						type: 'initial',
-						aliasId: 'clientInitials',
-						required: false,
-					},
-					{
-						name: 'Client signature date',
-						type: 'signatureDate',
-						aliasId: 'clientSignatureDate',
-						required: false,
-					},
-					{
-						name: 'Job Title',
-						type: 'shortText',
-						aliasId: 'job_title',
-						required: false,
-					},
-				],
-			},
-			// "metadata": {"internalUserId": 123}
-		}
-	});
-
-	var config = {
-		method: 'post',
-		maxBodyLength: Infinity,
-		url: 'https://graphql.useanvil.com',
-		headers: {
-			'Content-Type': 'application/json',
-			'Authorization': basicAuth
-		},
-		data: data
-	};
-
-	axios(config)
-		.then(function (response) {
-			// console.log(res, 'res')
-			resp.send(response.data)
-			// console.log(JSON.stringify(response.data));
-		})
-		.catch(function (error) {
-
-			let { errors } = error
-			console.log(JSON.stringify(errors), "error", { ...error });
-			resp.send(error)
-		});
-
-})
 
 app.post('/createEsign', async (req, res) => {
 
@@ -506,8 +346,7 @@ app.post('/createEsign', async (req, res) => {
 				fieldId: element
 			})
 		});
-		signaturePacketVariables.signers[0].fields = [{ fileId: 'payroll1', fieldId: 'salesSignature' }]
-		signaturePacketVariables.signers[1].fields = [{ fileId: 'payroll1', fieldId: 'clientSignature' }]
+		signaturePacketVariables.signers[0].fields = signFields
 
 		console.log(JSON.stringify(signaturePacketVariables))
 		// console.log(signaturePacketVariables, 'signaturePacketVariables')
@@ -530,36 +369,19 @@ app.post('/createEsign', async (req, res) => {
 
 });
 
-app.post('/createEtchPacket', async (req, resp) => {
+app.post('/createSignUrl', async (req, res) => {
+
 	try {
-		const { signaturePacketEid } = req.body
+		const { signaturePacketEid, clientUserId } = req.body
 		const { data } = await anvilClient.getEtchPacket({
 			variables: { eid: signaturePacketEid },
 		})
 		console.log(signaturePacketEid, 'signaturePacketEid')
 		// We only have 1 signer for this signature packet
-		// console.log(data, "data here")
-		const signers = data.data.etchPacket
-		resp.send(signers)
-	}
-	catch (e) {
-		resp.send(e)
-	}
-})
-
-app.post('/createSignUrl', async (req, res) => {
-
-	try {
-		const { signerEid, clientUserId } = req.body
-		// const { data } = await anvilClient.getEtchPacket({
-		// 	variables: { eid: signaturePacketEid },
-		// })
-		// console.log(signaturePacketEid, 'signaturePacketEid')
-		// // We only have 1 signer for this signature packet
-		// console.log(data, "data here")
-		// const signers = data.data.etchPacket.documentGroup.signers
-		// const signerEid = signers[1].eid
-		console.log(signerEid, 'signers', clientUserId)
+		console.log(data, "data here")
+		const signers = data.data.etchPacket.documentGroup.signers
+		const signerEid = signers[0].eid
+		console.log(signers, 'signers', signerEid)
 		// The signing URL generated here is used to
 		// embed the signing page into our app
 		const { url } = await anvilClient.generateEtchSignUrl({
@@ -576,3 +398,67 @@ app.post('/createSignUrl', async (req, res) => {
 	}
 })
 
+app.get('/generateEmbeddedUrl', (req, res) => {
+	// let data = {
+	// 	"AllowedDomains": ["http://localhost:3000"],
+	// 	"ExperienceConfiguration": {
+	// 		"QuickSightConsole": {
+	// 			"FeatureConfigurations": {
+	// 				"StatePersistence": {
+	// 					"Enabled": true
+	// 				}
+	// 			},
+	// 			"InitialPath": "/start"
+	// 		}
+	// 	},
+	// 	"SessionLifetimeInMinutes": 600,
+	// 	"UserArn": "arn:aws:iam::068652499116:user/shantanu"
+	// }
+	// try {
+	// 	var config = {
+	// 		method: 'post',
+	// 		url: 'https://us-west-2.quicksight.aws.amazon.com/sn/accounts/068652499116/embed-url/registered-user',
+	// 		headers: {
+	// 			'Content-Type': 'application/json',
+
+	// 		},
+	// 		data: data
+	// 	};
+
+	// 	axios(config)
+	// 		.then(function (response) {
+	// 			console.log(res, 'res')
+	// 			res.send(response.data)
+	// 			// console.log(JSON.stringify(response.data));
+	// 		})
+	// 		.catch(function (error) {
+
+	// 			let { errors } = error
+	// 			console.log(JSON.stringify(errors), "error", { ...error });
+	// 			res.send(error)
+	// 		});
+	// }
+	// catch (e) {
+	// 	console.log(e, 'e')
+	// 	res.send(e)
+	// }
+	quicksightClient.generateEmbedUrlForRegisteredUser({
+		'AwsAccountId': '068652499116',
+		'ExperienceConfiguration': {
+			'QuickSightConsole': {
+				'InitialPath': '/start'
+			}
+		},
+		'UserArn': 'arn:aws:quicksight:us-west-2:068652499116:user/default/shantanu',
+		'AllowedDomains': ["http://localhost:3001"],
+		'SessionLifetimeInMinutes': 100
+	}, function (err, data) {
+		console.log('Errors: ');
+		console.log(err);
+		if (data) {
+			res.send(data)
+		}
+		console.log('Response: ');
+		console.log(data);
+	});
+})
