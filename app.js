@@ -32,7 +32,7 @@ AWS.config.update(SESConfig);
 const app = express();
 app.use(express.json());
 app.use(cors({
-	origin: ['http://localhost:3001', 'http://52.34.40.39:8900']
+	origin: ['http://localhost:3001', 'http://52.34.40.39:8900', 'https://careers.curately.ai']
 }));
 
 const getTemplates = () => {
