@@ -450,7 +450,7 @@ app.get('/generateEmbeddedUrl', (req, res) => {
 			}
 		},
 		'UserArn': 'arn:aws:quicksight:us-west-2:068652499116:user/default/shantanu',
-		'AllowedDomains': ["http://localhost:3001", "https://careers.curately.ai", "http://localhost:3002", "https://app.curately.ai"],
+		'AllowedDomains': ["http://localhost:3000", "https://app.curately.ai"],
 		'SessionLifetimeInMinutes': 100
 	}, function (err, data) {
 		console.log('Errors: ');
