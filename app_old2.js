@@ -4,6 +4,8 @@ import fs from 'fs'
 import Anvil from '@anvilco/anvil'
 import { createRequire } from "module";
 import path from 'path';
+
+
 const __dirname = path.resolve();
 const require = createRequire(import.meta.url);
 var http = require('http');
@@ -11,30 +13,46 @@ var express = require('express');
 const axios = require('axios');
 const FormData = require('form-data');
 const cors = require('cors');
-const { request } = require('graphql-request');
-const bodyParser = require('body-parser')
+const dotenv = require('dotenv');
+dotenv.config();
 
-
+const AWS = require('aws-sdk');
+var quicksightClient = new AWS.Service({
+	apiConfig: require('aws-sdk/apis/quicksight-2018-04-01.min.json'),
+	region: 'us-west-2',
+});
+console.log(process.env.AWS_ACCESS_KEY_ID, 'process.env.AWS_ACCESS_KEY_ID')
+const SESConfig = {
+	apiVersion: "2018-04-01",
+	accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+	secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+	region: "us-east-1"
+}
+AWS.config.update(SESConfig);
 const app = express();
-app.use(express.json({ limit: "50mb", type: "application/json" }))
-app.use(express.urlencoded({ extended: true }));
-app.use(express.text({ type: 'application/json' }))
-
+app.use(express.json());
 app.use(cors({
-	origin: "*"
+	origin: ['http://localhost:3001', "https://app.curately.ai", 'http://localhost:4200']
 }));
+
+const getTemplates = () => {
+
+}
+
+
+
+
+
+
+
+
+
 
 // The ID of the PDF template to fill
 const pdfTemplateID = '2Oac1eKLbkYtj8NASclu'
 // Your API key from your Anvil organization settings
 const apiKey = '3omv8BJAYGmo8xscUj59vu9zpvcsl4Tu'
 const anvilClient = new Anvil({ apiKey })
-
-const encodedToken = Buffer.from('3omv8BJAYGmo8xscUj59vu9zpvcsl4Tu:', 'ascii').toString('base64')
-const basicAuth = `Basic ${encodedToken}`
-
-const endpoint = `https://graphql.useanvil.com'`
-
 
 // console.log(anvilClient, 'anvilClient')
 const prefillData = async () => {
@@ -71,13 +89,59 @@ const templateW4 = {
 
 const packetFiles = [templateW4]
 
+const packetSigners = [
+	{
+		id: "signer1",
+		// Important! This tells Anvil that our app will be
+		// notifying the signer when it is their turn to sign
+		signerType: 'embedded',
+		// Important! This tells Anvil to redirect to this URL
+		// after the signer has completed their signatures
+		redirectURL: '/onboarding/finish',
+
+		// fields left undefined to be filled using webform input
+		name: "phani",
+		email: "akunde@ovahq.com",
+		tokenValidForMinutes: 60 * 24 * 3,
+		fields: [
+			{
+				fileId: 'payroll1',
+				fieldId: 'signatureOne',
+			},
+		],
+	}
+]
+
+const encodedToken = Buffer.from('3omv8BJAYGmo8xscUj59vu9zpvcsl4Tu:', 'ascii').toString('base64')
+const basicAuth = `Basic ${encodedToken}`
+
+// const packetPrefillData = {
+// 	payroll1: {
+// 		data: {
+// 			// fields left undefined to be filled using webform input
+// 			"accountNumber0": "45785587",
+// 			"routingNumber0": "789854225",
+// 			"accountNumber1": "125478958",
+// 			"jointAccountHolderName": {
+// 				"firstName": "Phani kumar",
+// 				"mi": "",
+// 				"lastName": "Ankem"
+// 			},
+// 			"date": "2023-12-14",
+// 			"routingNumber1": "32545654",
+// 		},
+// 	},
+// }
+
+
+
 const signaturePacketVariables = {
 	isDraft: false,
-	isTest: true,
+	isTest: false,
 	files: packetFiles,
 	signers: [
 		{
-			id: "signer1",
+			id: "clientSignature",
 			// Important! This tells Anvil that our app will be
 			// notifying the signer when it is their turn to sign
 			signerType: 'embedded',
@@ -94,26 +158,7 @@ const signaturePacketVariables = {
 				// 	fieldId: 'signatureOne',
 				// },
 			],
-		},
-		{
-			id: "clientSignature",
-			// Important! This tells Anvil that our app will be
-			// notifying the signer when it is their turn to sign
-			signerType: 'embedded',
-			// Important! This tells Anvil to redirect to this URL
-			// after the signer has completed their signatures
-			// redirectURL: 'http://localhost:3000/CandidateEsign/thankspage',
-			tokenValidForMinutes: 60 * 24 * 3,
-			// fields left undefined to be filled using webform input
-			name: "Anil",
-			email: "akunde@ovahq.com",
-			fields: [
-				// {
-				// 	fileId: 'payroll1',
-				// 	fieldId: 'signatureOne',
-				// },
-			],
-		},
+		}
 	],
 	data: {
 		payloads: {
@@ -281,77 +326,48 @@ app.post("/getTemplateFields", (req, res) => {
 })
 
 
-app.post('/createTemplate', (req, resp) => {
 
-	let { title, file } = req.body
-	let data = JSON.stringify({
-		query: `mutation CreateCast(
-			$organizationEid: String
-			$title: String
-			$file: Upload!
-			$isTemplate: Boolean
-			$detectFields: Boolean
-		  ) {
-			createCast(
-			  organizationEid: $organizationEid
-			  title: $title
-			  file: $file
-			  isTemplate: $isTemplate
-			  detectFields: $detectFields
-			) {
-			  id
-			  eid
-			  name
-			  title
-			  config
-			  location
-			  createdAt
-			  updatedAt
-			  isTemplate
-			  organization {
-				id
-				eid
-				slug
-				name
-			  }
-			}
-		  }
-		  `,
-		variables: {
-			"organizationEid": "f2AzCk56ltQW3xPZB2Rt",
-			"title": title,
-			"file": file,
-			"isTemplate": true,
-			"detectFields": true
-		}
-	});
 
-	var config = {
-		method: 'post',
-		maxBodyLength: Infinity,
-		url: 'https://graphql.useanvil.com',
-		headers: {
-			'Content-Type': 'application/json',
-			'Authorization': basicAuth
-		},
-		data: data
-	};
+app.post('/createEsign', async (req, res) => {
 
-	axios(config)
-		.then(function (response) {
-			// console.log(res, 'res')
-			resp.send(response.data)
-			// console.log(JSON.stringify(response.data));
-		})
-		.catch(function (error) {
+	try {
+		const {
+			name, email, templateId, fieldData, signerFields
+		} = req.body
 
-			let { errors } = error
-			console.log(JSON.stringify(errors), "error", { ...error });
-			resp.send(error)
+		signaturePacketVariables.signers[0].name = name
+		signaturePacketVariables.signers[0].email = email
+		signaturePacketVariables.files[0].castEid = templateId
+		signaturePacketVariables.data.payloads.payroll1.data = fieldData;
+		let signFields = []
+		signerFields.forEach(element => {
+			signFields.push({
+				fileId: signaturePacketVariables.files[0].id,
+				fieldId: element
+			})
 		});
+		signaturePacketVariables.signers[0].fields = signFields
 
-})
+		console.log(JSON.stringify(signaturePacketVariables))
+		// console.log(signaturePacketVariables, 'signaturePacketVariables')
+		const {
+			statusCode, data, errors
+		} = await anvilClient.createEtchPacket({ variables: signaturePacketVariables })
+		console.log("errors 1", errors)
+		const signaturePacketEid = data.data.createEtchPacket.eid
 
+
+		// Add the new post to the list of posts
+		res.send({ packetId: signaturePacketEid });
+	}
+
+	catch (e) {
+		res.send(e)
+		console.log(e, "error")
+	}
+
+
+});
 
 app.post('/editTemplate', (req, resp) => {
 
@@ -486,83 +502,20 @@ app.post('/editTemplate', (req, resp) => {
 
 })
 
-app.post('/createEsign', async (req, res) => {
+
+app.post('/createSignUrl', async (req, res) => {
 
 	try {
-		const {
-			name, email, templateId, fieldData, signerFields
-		} = req.body
-
-		signaturePacketVariables.signers[0].name = name
-		signaturePacketVariables.signers[0].email = email
-		signaturePacketVariables.files[0].castEid = templateId
-		signaturePacketVariables.data.payloads.payroll1.data = fieldData;
-		// let signFields = []
-		// signerFields.forEach(element => {
-		// 	signFields.push({
-		// 		fileId: signaturePacketVariables.files[0].id,
-		// 		fieldId: element
-		// 	})
-		// });
-		signaturePacketVariables.signers[0].fields = [{ fileId: 'payroll1', fieldId: 'salesSignature' }]
-		signaturePacketVariables.signers[1].fields = [{ fileId: 'payroll1', fieldId: 'clientSignature' }]
-
-		// console.log(JSON.stringify(signaturePacketVariables))
-		// console.log(signaturePacketVariables, 'signaturePacketVariables')
-		const {
-			statusCode, data, errors
-		} = await anvilClient.createEtchPacket({ variables: signaturePacketVariables })
-		// console.log("errors 1", errors)
-		const signaturePacketEid = data.data.createEtchPacket.eid
-
-
-		// Add the new post to the list of posts
-		res.send({ packetId: signaturePacketEid });
-	}
-
-	catch (e) {
-		res.send(e)
-		console.log(e, "error")
-	}
-
-
-});
-
-app.post('/createEtchPacket', async (req, resp) => {
-	try {
-		const { signaturePacketEid } = req.body
-		// const { signaturePacketEid } = req.body
+		const { signaturePacketEid, clientUserId } = req.body
 		const { data } = await anvilClient.getEtchPacket({
 			variables: { eid: signaturePacketEid },
 		})
 		console.log(signaturePacketEid, 'signaturePacketEid')
 		// We only have 1 signer for this signature packet
 		console.log(data, "data here")
-		// const signers = data.data.etchPacket.documentGroup.signers
-		// const signerEid = signers[0].eid
-		// console.log(signers, 'signers', signerEid)
-		// console.log(data, "data here")
-		const signers = data.data.etchPacket
-		resp.send(signers)
-	}
-	catch (e) {
-		resp.send(e)
-	}
-})
-
-app.post('/createSignUrl', async (req, res) => {
-
-	try {
-		const { signerEid, clientUserId } = req.body
-		// const { data } = await anvilClient.getEtchPacket({
-		//     variables: { eid: signerEid },
-		// })
-		// console.log(signaturePacketEid, 'signaturePacketEid')
-		// // We only have 1 signer for this signature packet
-		// console.log(data, "data here")
-		// const signers = data.data.etchPacket.documentGroup.signers
-		// const signerEid = signers[0].eid
-		// console.log(signers, 'signers', signerEid)
+		const signers = data.data.etchPacket.documentGroup.signers
+		const signerEid = signers[0].eid
+		console.log(signers, 'signers', signerEid)
 		// The signing URL generated here is used to
 		// embed the signing page into our app
 		const { url } = await anvilClient.generateEtchSignUrl({
@@ -579,47 +532,80 @@ app.post('/createSignUrl', async (req, res) => {
 	}
 })
 
-app.post("/sitesVerify", async (req, resp) => {
-	let { token, secret } = req.body
+app.get('/generateEmbeddedUrl', (req, res) => {
+	// let data = {
+	// 	"AllowedDomains": ["http://localhost:3000"],
+	// 	"ExperienceConfiguration": {
+	// 		"QuickSightConsole": {
+	// 			"FeatureConfigurations": {
+	// 				"StatePersistence": {
+	// 					"Enabled": true
+	// 				}
+	// 			},
+	// 			"InitialPath": "/start"
+	// 		}
+	// 	},
+	// 	"SessionLifetimeInMinutes": 600,
+	// 	"UserArn": "arn:aws:iam::068652499116:user/shantanu"
+	// }
+	// try {
+	// 	var config = {
+	// 		method: 'post',
+	// 		url: 'https://us-west-2.quicksight.aws.amazon.com/sn/accounts/068652499116/embed-url/registered-user',
+	// 		headers: {
+	// 			'Content-Type': 'application/json',
 
-	console.log(req, "req", req.body)
-	let formData = new FormData()
-	formData.append('secret', "0x4AAAAAAAR-XZXd7d7O5vMC8XO9zvRP_gI");
-	formData.append('response', token);
+	// 		},
+	// 		data: data
+	// 	};
 
-	// console.log(JSON.stringify(formData), 'formData')
-	var config = {
-		method: 'post',
-		maxBodyLength: Infinity,
-		url: 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+	// 	axios(config)
+	// 		.then(function (response) {
+	// 			console.log(res, 'res')
+	// 			res.send(response.data)
+	// 			// console.log(JSON.stringify(response.data));
+	// 		})
+	// 		.catch(function (error) {
 
-		data: formData
-	};
+	// 			let { errors } = error
+	// 			console.log(JSON.stringify(errors), "error", { ...error });
+	// 			res.send(error)
+	// 		});
+	// }
+	// catch (e) {
+	// 	console.log(e, 'e')
+	// 	res.send(e)
+	// }
+	quicksightClient.generateEmbedUrlForRegisteredUser({
+		'AwsAccountId': '068652499116',
+		'ExperienceConfiguration': {
+			'QuickSightConsole': {
+				'InitialPath': '/start'
+			}
+		},
+		'UserArn': 'arn:aws:quicksight:us-west-2:068652499116:user/default/shantanu',
+		'AllowedDomains': ["http://localhost:3000", "https://app.curately.ai"],
+		'SessionLifetimeInMinutes': 100
+	}, function (err, data) {
+		console.log('Errors: ');
+		console.log(err);
+		if (data) {
+			res.send(data)
+		}
+		console.log('Response: ');
+		console.log(data);
+	});
+})
 
-	axios(config)
+app.get("/generateCode", async (req, res) => {
+	axios.get(`https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=86jiupig4avfpj&redirect_uri=http://localhost:4200&scope=openid email profile`)
 		.then(function (response) {
-			console.log(response.data, 'respp')
-			resp.send(response.data)
-			// console.log(JSON.stringify(response.data));
+			// handle success
+			console.log(response);
+			res.send(JSON.stringify(response.data))
 		})
 		.catch(function (error) {
-
-			// let { errors } = error
-			// console.log(JSON.stringify(error));
-			resp.send(error)
-		});
-	// const result = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-	//     body: formData,
-	//     method: 'POST',
-	// });
-
-	// const outcome = await result.json();
-	// if (!outcome.success) {
-	//     res.send(outcome)
-	//     // new Response('The provided Turnstile token was not valid! \n' + JSON.stringify(outcome));
-	// }
-	// // The Turnstile token was successfuly validated. Proceed with your application logic.
-	// // Validate login, redirect user, etc.
-	// // For this demo, we just echo the "/siteverify" response:
-	// res.send(outcome)
+			// handle error
+			res.send(error)
+		})
 })
