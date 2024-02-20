@@ -287,14 +287,14 @@ app.post('/createTemplate', (req, resp) => {
     let data = JSON.stringify({
         query: `mutation CreateCast(
 			$organizationEid: String
-			$title: String
+			
 			$file: Upload!
 			$isTemplate: Boolean
 			$detectFields: Boolean
 		  ) {
 			createCast(
 			  organizationEid: $organizationEid
-			  title: $title
+		
 			  file: $file
 			  isTemplate: $isTemplate
 			  detectFields: $detectFields
@@ -319,7 +319,7 @@ app.post('/createTemplate', (req, resp) => {
 		  `,
         variables: {
             "organizationEid": "f2AzCk56ltQW3xPZB2Rt",
-            "title": title,
+
             "file": file,
             "isTemplate": true,
             "detectFields": true
@@ -346,13 +346,80 @@ app.post('/createTemplate', (req, resp) => {
         .catch(function (error) {
 
             let { errors } = error
-            console.log(JSON.stringify(errors), "error", { ...error });
+            console.log(JSON.stringify(errors), "error", { ...error }, JSON.stringify(error.data));
             resp.send(error)
         });
 
 })
 
+app.post('/deleteTemplate', (req, res) => {
+    let { templateId } = req.body
+    let data = JSON.stringify({
+        query: `mutation UpdateCast(
+            $eid: String!
+            $name: String
+            $title: String
+            $config: JSON
+            $configFile: Upload
+            $file: Upload
+            $isArchived: Boolean
+            $versionNumber: Int
+          ) {
+            updateCast(
+              eid: $eid
+              name: $name
+              title: $title
+              config: $config
+              configFile: $configFile
+              file: $file
+              isArchived: $isArchived
+              versionNumber: $versionNumber
+            ) {
+              id
+              eid
+              name
+              title
+              config
+              location
+              updatedAt
+              archivedAt
+              fieldInfo
+              exampleData
+              versionNumber
+            }
+          }
+		  `,
+        variables: {
+            eid: templateId,
+            isArchived: true
+        }
 
+    });
+
+    var config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: 'https://graphql.useanvil.com',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': basicAuth
+        },
+        data: data
+    };
+
+    axios(config)
+        .then(function (response) {
+            // console.log(res, 'res')
+            res.send(response.data)
+            // console.log(JSON.stringify(response.data));
+        })
+        .catch(function (error) {
+
+            let { errors } = error
+            console.log(JSON.stringify(errors), "error", { ...error });
+            res.send(error)
+        });
+})
 app.post('/editTemplate', (req, resp) => {
 
     let { castId } = req.body
