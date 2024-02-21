@@ -422,7 +422,7 @@ app.post('/deleteTemplate', (req, res) => {
 })
 app.post('/editTemplate', (req, resp) => {
 
-    let { castId } = req.body
+    let { castId, fieldData } = req.body
     let data = JSON.stringify({
         query: `mutation generateEmbedURL(
 			$type: String!,
@@ -460,68 +460,69 @@ app.post('/editTemplate', (req, resp) => {
                 showPageTitleBar: false,
                 // finishButtonText: 'Custom text',
                 // selectionAddAnotherFieldText: 'Plz add another field',
-                fields: [
-                    // * `aliasId` can be anything you'd like: https://www.useanvil.com/docs/api/fill-pdf/#field-ids
-                    // * All types: https://www.useanvil.com/docs/api/fill-pdf/#all-field-types
-                    {
-                        name: 'Full name',
-                        type: 'fullName',
-                        aliasId: 'name',
-                        required: false,
+                // [
+                //     // * `aliasId` can be anything you'd like: https://www.useanvil.com/docs/api/fill-pdf/#field-ids
+                //     // * All types: https://www.useanvil.com/docs/api/fill-pdf/#all-field-types
+                //     {
+                //         name: 'Full name',
+                //         type: 'fullName',
+                //         aliasId: 'name',
+                //         required: false,
 
-                        // optional fields
-                        alignment: 'center', // `left`, `center`, `right`
-                        fontSize: '12',
-                        fontWeight: 'boldItalic', // 'normal', `bold`, `boldItalic`, `italic`
-                        fontFamily: 'Futura', // Any google font, 'Helvetica', 'Times new roman', 'Courier'
-                        textColor: '#a00000',
-                    },
-                    {
-                        name: 'Email',
-                        type: 'email',
-                        aliasId: 'email',
-                        required: false,
-                    },
-                    {
-                        name: 'Date of birth',
-                        type: 'date',
-                        aliasId: 'dob',
-                        required: false,
+                //         // optional fields
+                //         alignment: 'center', // `left`, `center`, `right`
+                //         fontSize: '12',
+                //         fontWeight: 'boldItalic', // 'normal', `bold`, `boldItalic`, `italic`
+                //         fontFamily: 'Futura', // Any google font, 'Helvetica', 'Times new roman', 'Courier'
+                //         textColor: '#a00000',
+                //     },
+                //     {
+                //         name: 'Email',
+                //         type: 'email',
+                //         aliasId: 'email',
+                //         required: false,
+                //     },
+                //     {
+                //         name: 'Date of birth',
+                //         type: 'date',
+                //         aliasId: 'dob',
+                //         required: false,
 
-                        // optional date fields:
-                        format: 'MMMM Do YYYY', // see moment.js docs
-                    },
-                    {
-                        name: 'Client signature',
-                        type: 'signature',
-                        aliasId: 'clientSignature',
-                        required: false,
-                    },
-                    {
-                        name: 'Sales signature',
-                        type: 'signature',
-                        aliasId: 'salesSignature',
-                        required: false,
-                    },
-                    {
-                        name: 'Client initials',
-                        type: 'initial',
-                        aliasId: 'clientInitials',
-                        required: false,
-                    },
-                    {
-                        name: 'Client signature date',
-                        type: 'signatureDate',
-                        aliasId: 'clientSignatureDate',
-                        required: false,
-                    },
-                    {
-                        name: 'Job Title',
-                        type: 'shortText',
-                        aliasId: 'job_title',
-                        required: false,
-                    },
-                ],
+                //         // optional date fields:
+                //         format: 'MMMM Do YYYY', // see moment.js docs
+                //     },
+                //     {
+                //         name: 'Client signature',
+                //         type: 'signature',
+                //         aliasId: 'clientSignature',
+                //         required: false,
+                //     },
+                //     {
+                //         name: 'Sales signature',
+                //         type: 'signature',
+                //         aliasId: 'salesSignature',
+                //         required: false,
+                //     },
+                //     {
+                //         name: 'Client initials',
+                //         type: 'initial',
+                //         aliasId: 'clientInitials',
+                //         required: false,
+                //     },
+                //     {
+                //         name: 'Client signature date',
+                //         type: 'signatureDate',
+                //         aliasId: 'clientSignatureDate',
+                //         required: false,
+                //     },
+                //     {
+                //         name: 'Job Title',
+                //         type: 'shortText',
+                //         aliasId: 'job_title',
+                //         required: false,
+                //     },
+                // ],
+                fields: fieldData
             },
             // "metadata": {"internalUserId": 123}
         }
