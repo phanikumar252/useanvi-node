@@ -287,14 +287,14 @@ app.post('/createTemplate', (req, resp) => {
     let data = JSON.stringify({
         query: `mutation CreateCast(
 			$organizationEid: String
-			
+            $allowedAliasIds: [String],
 			$file: Upload!
 			$isTemplate: Boolean
 			$detectFields: Boolean
 		  ) {
 			createCast(
 			  organizationEid: $organizationEid
-		
+              allowedAliasIds: $allowedAliasIds,
 			  file: $file
 			  isTemplate: $isTemplate
 			  detectFields: $detectFields
@@ -319,7 +319,7 @@ app.post('/createTemplate', (req, resp) => {
 		  `,
         variables: {
             "organizationEid": "f2AzCk56ltQW3xPZB2Rt",
-
+            "allowedAliasIds": ["date", "name", "email", "phone", 'socialSecurityNumber', "address", "city"],
             "file": file,
             "isTemplate": true,
             "detectFields": true
@@ -450,80 +450,7 @@ app.post('/editTemplate', (req, resp) => {
             "eid": castId,
             // "validUntil": "2024-06-12T01:43:50+00:00",
             "validForSeconds": 86400,
-            "options": {
-                "mode": "preset-fields",
-                "pageTitle": "Title of the page",
-                "title": "Sidebar title",
-                description: 'Please draw fields indicated below.',
-                selectionDescription:
-                    'Select the field that best represents the box drawn.',
-                showPageTitleBar: false,
-                // finishButtonText: 'Custom text',
-                // selectionAddAnotherFieldText: 'Plz add another field',
-                // [
-                //     // * `aliasId` can be anything you'd like: https://www.useanvil.com/docs/api/fill-pdf/#field-ids
-                //     // * All types: https://www.useanvil.com/docs/api/fill-pdf/#all-field-types
-                //     {
-                //         name: 'Full name',
-                //         type: 'fullName',
-                //         aliasId: 'name',
-                //         required: false,
 
-                //         // optional fields
-                //         alignment: 'center', // `left`, `center`, `right`
-                //         fontSize: '12',
-                //         fontWeight: 'boldItalic', // 'normal', `bold`, `boldItalic`, `italic`
-                //         fontFamily: 'Futura', // Any google font, 'Helvetica', 'Times new roman', 'Courier'
-                //         textColor: '#a00000',
-                //     },
-                //     {
-                //         name: 'Email',
-                //         type: 'email',
-                //         aliasId: 'email',
-                //         required: false,
-                //     },
-                //     {
-                //         name: 'Date of birth',
-                //         type: 'date',
-                //         aliasId: 'dob',
-                //         required: false,
-
-                //         // optional date fields:
-                //         format: 'MMMM Do YYYY', // see moment.js docs
-                //     },
-                //     {
-                //         name: 'Client signature',
-                //         type: 'signature',
-                //         aliasId: 'clientSignature',
-                //         required: false,
-                //     },
-                //     {
-                //         name: 'Sales signature',
-                //         type: 'signature',
-                //         aliasId: 'salesSignature',
-                //         required: false,
-                //     },
-                //     {
-                //         name: 'Client initials',
-                //         type: 'initial',
-                //         aliasId: 'clientInitials',
-                //         required: false,
-                //     },
-                //     {
-                //         name: 'Client signature date',
-                //         type: 'signatureDate',
-                //         aliasId: 'clientSignatureDate',
-                //         required: false,
-                //     },
-                //     {
-                //         name: 'Job Title',
-                //         type: 'shortText',
-                //         aliasId: 'job_title',
-                //         required: false,
-                //     },
-                // ],
-                fields: fieldData
-            },
             // "metadata": {"internalUserId": 123}
         }
     });
@@ -690,4 +617,288 @@ app.post("/sitesVerify", async (req, resp) => {
     // // Validate login, redirect user, etc.
     // // For this demo, we just echo the "/siteverify" response:
     // res.send(outcome)
+})
+
+app.post("/createWorkflow", async (req, res) => {
+    let { castId, name } = req.body
+    let data = JSON.stringify({
+        query: `mutation CreateWeld(
+            $organizationEid: String!
+            $name: String!
+            $slug: String
+            $visibility: String
+            $castEid: String
+            $draftStep: String
+          ) {
+            createWeld(
+              organizationEid: $organizationEid
+              slug: $slug
+              name: $name
+              visibility: $visibility
+              castEid: $castEid
+              draftStep: $draftStep
+            ) {
+              id
+              eid
+              slug
+              name
+              visibility
+              draftStep
+              config
+              createdAt
+              updatedAt
+              organization {
+                id
+                eid
+                slug
+                name
+              }
+              forges {
+                id
+                eid
+                slug
+                name
+            }
+            }
+          }
+		  `,
+        variables: {
+            "organizationEid": "f2AzCk56ltQW3xPZB2Rt",
+            "castEid": castId,
+            "name": name,
+            "visibility": "draft",
+            "draftStep": "pdf"
+        }
+    });
+
+    var config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: 'https://graphql.useanvil.com',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': basicAuth
+        },
+        data: data
+    };
+
+    axios(config)
+        .then(function (response) {
+            // console.log(res, 'res')
+            res.send(response.data)
+            // console.log(JSON.stringify(response.data));
+        })
+        .catch(function (error) {
+
+            let { errors } = error
+            console.log(JSON.stringify(errors), "error", { ...error });
+            res.send(errors)
+        });
+
+})
+
+const generateWorkflowUrl = (dataResp) => {
+
+    let data = JSON.stringify({
+        query: `mutation (
+            $forgeEid: String!,
+            $weldDataEid: String,
+            $submissionEid: String,
+            $payload: JSON!,
+            $currentStep: Int,
+            $complete: Boolean,
+            $isTest: Boolean=false,
+            $timezone: String,
+            $webhookURL: String 
+        ) {
+            forgeSubmit (
+                forgeEid: $forgeEid,
+                weldDataEid: $weldDataEid,
+                submissionEid: $submissionEid,
+                payload: $payload,
+                currentStep: $currentStep,
+                complete: $complete,
+                isTest: $isTest,
+                timezone: $timezone,
+                webhookURL: $webhookURL
+            ) {
+                eid
+                payload
+                continueURL
+                status
+                completedAt
+            }
+        }        
+		  `,
+        variables: {
+            "forgeEid": dataResp.forges[0].eid,
+            "payload": {},
+            "currentStep:": 2,
+            "isTest": false,
+            "complete": false
+        }
+    });
+
+    var config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: 'https://graphql.useanvil.com',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': basicAuth
+        },
+        data: data
+    };
+
+    axios(config)
+        .then(function (response) {
+            // console.log(res, 'res')
+            return new Promise((resolve, reject) => {
+                resolve(response.data)
+            })
+            // console.log(JSON.stringify(response.data));
+        })
+        .catch(function (error) {
+            // return error
+            return new Promise((resolve, reject) => {
+                reject(error)
+            })
+            // let { errors } = error
+            // console.log(JSON.stringify(errors), "error", { ...error });
+
+            // res.send(error)
+        });
+}
+
+app.post("/getWorkflow", async (req, res) => {
+    let { webformSlug } = req.body
+    let data = JSON.stringify({
+        query: `query WeldQuery($organizationSlug: String!, $slug: String!) {
+            data: weld(organizationSlug: $organizationSlug, slug: $slug) {
+                id
+                eid
+                slug
+                name
+                title
+                visibility
+                config
+                createdAt
+                updatedAt
+                organization {
+                    id
+                    slug
+                }
+                forges {
+                    id
+                    eid
+                    slug
+                    name
+                }
+                weldGroups {
+                    id
+                    eid
+                    slug
+                    name
+                }
+            }
+        }        
+		  `,
+        variables: {
+            "slug": webformSlug,
+            "organizationSlug": "curately-ai"
+        }
+    });
+
+    var config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: 'https://graphql.useanvil.com',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': basicAuth
+        },
+        data: data
+    };
+
+    axios(config)
+        .then(function async(response) {
+            // console.log(res, 'res')
+            // res.send(response.data)
+            res.send(response.data)
+
+            // console.log(JSON.stringify(response.data));
+        })
+        .catch(function (error) {
+
+            let { errors } = error
+            console.log(JSON.stringify(errors), "error", { ...error });
+            res.send(error)
+        });
+})
+
+app.post("/createWorkflowEmbeddedUrl", async (req, res) => {
+    let { forgeEid } = req.body
+    let data = JSON.stringify({
+        query: `mutation (
+            $forgeEid: String!,
+            $weldDataEid: String,
+            $submissionEid: String,
+            $payload: JSON!,
+            $currentStep: Int,
+            $complete: Boolean,
+            $isTest: Boolean=false,
+            $timezone: String,
+            $webhookURL: String 
+        ) {
+            forgeSubmit (
+                forgeEid: $forgeEid,
+                weldDataEid: $weldDataEid,
+                submissionEid: $submissionEid,
+                payload: $payload,
+                currentStep: $currentStep,
+                complete: $complete,
+                isTest: $isTest,
+                timezone: $timezone,
+                webhookURL: $webhookURL
+            ) {
+                eid
+                payload
+                continueURL
+                status
+                completedAt
+            }
+        }        
+		  `,
+        variables: {
+            "forgeEid": forgeEid,
+            "payload": {},
+            "currentStep:": 2,
+            "isTest": false,
+            "complete": false
+        }
+    });
+
+    var config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: 'https://graphql.useanvil.com',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': basicAuth
+        },
+        data: data
+    };
+
+    axios(config)
+        .then(function (response) {
+            // console.log(res, 'res')
+            res.send(response.data)
+            // console.log(JSON.stringify(response.data));
+        })
+        .catch(function (error) {
+
+            let { errors } = error
+            console.log(JSON.stringify(errors), "error", { ...error });
+            res.send(error)
+        });
 })
