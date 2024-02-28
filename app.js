@@ -667,7 +667,20 @@ app.post("/createWorkflow", async (req, res) => {
             "castEid": castId,
             "name": name,
             "visibility": "draft",
-            "draftStep": "pdf"
+            "draftStep": "pdf",
+            "signers": {
+                "signer1": {
+                    "name": "phani",
+                    "email": "phanik@ovahq.com",
+                    "label": "",
+                    "forgeID": "",
+                    "routingOrder": "",
+                    "signatureMode": "Embedded",
+                    "acceptEachField": true,
+
+                }
+
+            }
         }
     });
 
@@ -902,3 +915,92 @@ app.post("/createWorkflowEmbeddedUrl", async (req, res) => {
             res.send(error)
         });
 })
+
+app.post("/downloadDocuments", async (req, res) => {
+    try {
+        const { weldDataEid } = req.body
+        // const { data } = await anvilClient.getEtchPacket({
+        //     variables: { eid: signerEid },
+        // })
+        // console.log(signaturePacketEid, 'signaturePacketEid')
+        // // We only have 1 signer for this signature packet
+        // console.log(data, "data here")
+        // const signers = data.data.etchPacket.documentGroup.signers
+        // const signerEid = signers[0].eid
+        // console.log(signers, 'signers', signerEid)
+        // The signing URL generated here is used to
+        // embed the signing page into our app
+        const zipResponse = await anvilClient.downloadDocuments(weldDataEid)
+        // console.log(JSON.stringify(zipResponse))
+        fs.writeFileSync('workflowDocuments.zip', zipResponse.data)
+
+        res.send(zipResponse)
+    }
+    catch (e) {
+        console.log(e, 'e')
+        res.send(e)
+    }
+})
+
+app.get('/download/:eid.zip', (req, resp) => {
+    const { eid } = req.params
+
+    // Authenticate / authorize your user here!
+
+    const anvilDownloadURL = `https://app.useanvil.com/download/${eid}.zip`
+
+    // Authenticate to Anvil with your Anvil API key
+    // const encodedToken = Buffer.from(`${ANVIL_API_KEY}:`, 'ascii').toString(
+    //   'base64'
+    // )
+    const downloadOptions = {
+        method: 'get',
+        headers: { Authorization: `Basic ${encodedToken}` },
+    }
+
+    fetch(anvilDownloadURL, downloadOptions).then((downloadResponse) => {
+        downloadResponse.headers.forEach((v, n) => resp.setHeader(n, v))
+        resp.send(downloadResponse)
+    })
+})
+
+app.post("/weldData", (req, res) => {
+    let { weldDataEid } = req.body
+    let data = JSON.stringify({
+        query: `query weldData($eid: String!) {
+            weldData(eid: $eid) {
+              eid
+              files
+            }
+          }     
+		  `,
+        variables: {
+            "eid": weldDataEid
+        }
+    });
+
+    var config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: 'https://graphql.useanvil.com',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': basicAuth
+        },
+        data: data
+    };
+
+    axios(config)
+        .then(function (response) {
+            // console.log(res, 'res')
+            res.send(response.data)
+            // console.log(JSON.stringify(response.data));
+        })
+        .catch(function (error) {
+
+            let { errors } = error
+            console.log(JSON.stringify(errors), "error", { ...error });
+            res.send(error)
+        });
+})
+
