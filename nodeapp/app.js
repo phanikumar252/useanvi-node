@@ -284,6 +284,7 @@ app.post("/getTemplateFields", (req, res) => {
 app.post('/createTemplate', (req, resp) => {
 
     let { title, file } = req.body
+
     let data = JSON.stringify({
         query: `mutation CreateCast(
 			$organizationEid: String
@@ -319,7 +320,7 @@ app.post('/createTemplate', (req, resp) => {
 		  `,
         variables: {
             "organizationEid": "f2AzCk56ltQW3xPZB2Rt",
-            "allowedAliasIds": ["date", "name", "email", "phone", 'socialSecurityNumber', "address", "city"],
+            "allowedAliasIds": ["date", "name", "email", "phone", 'socialSecurityNumber', "address", "city", "signer1"],
             "file": file,
             "isTemplate": true,
             "detectFields": true
@@ -445,6 +446,86 @@ app.post('/editTemplate', (req, resp) => {
 			}
 		  }
 		  `,
+        // variables: {
+        //     "type": "edit-pdf-template",
+        //     "eid": castId,
+        //     // "validUntil": "2024-06-12T01:43:50+00:00",
+        //     "validForSeconds": 86400,
+        //     "options": {
+        //         "mode": "preset-fields",
+        //         "pageTitle": "Title of the page",
+        //         "title": "Sidebar title",
+        //         description: 'Please draw fields indicated below.',
+        //         selectionDescription:
+        //             'Select the field that best represents the box drawn.',
+        //         showPageTitleBar: false,
+        //         // finishButtonText: 'Custom text',
+        //         // selectionAddAnotherFieldText: 'Plz add another field',
+        //         fields: [
+        //             // * `aliasId` can be anything you'd like: https://www.useanvil.com/docs/api/fill-pdf/#field-ids
+        //             // * All types: https://www.useanvil.com/docs/api/fill-pdf/#all-field-types
+        //             {
+        //                 name: 'Full name',
+        //                 type: 'fullName',
+        //                 aliasId: 'name',
+        //                 required: false,
+
+        //                 // optional fields
+        //                 alignment: 'center', // `left`, `center`, `right`
+        //                 fontSize: '12',
+        //                 fontWeight: 'boldItalic', // 'normal', `bold`, `boldItalic`, `italic`
+        //                 fontFamily: 'Futura', // Any google font, 'Helvetica', 'Times new roman', 'Courier'
+        //                 textColor: '#a00000',
+        //             },
+        //             {
+        //                 name: 'Email',
+        //                 type: 'email',
+        //                 aliasId: 'email',
+        //                 required: false,
+        //             },
+        //             {
+        //                 name: 'Date of birth',
+        //                 type: 'date',
+        //                 aliasId: 'dob',
+        //                 required: false,
+
+        //                 // optional date fields:
+        //                 format: 'MMMM Do YYYY', // see moment.js docs
+        //             },
+        //             {
+        //                 name: 'Client signature',
+        //                 type: 'signature',
+        //                 aliasId: 'clientSignature',
+        //                 required: false,
+        //             },
+        //             {
+        //                 name: 'Sales signature',
+        //                 type: 'signature',
+        //                 aliasId: 'salesSignature',
+        //                 required: false,
+        //             },
+        //             {
+        //                 name: 'Client initials',
+        //                 type: 'initial',
+        //                 aliasId: 'clientInitials',
+        //                 required: false,
+        //             },
+        //             {
+        //                 name: 'Client signature date',
+        //                 type: 'signatureDate',
+        //                 aliasId: 'clientSignatureDate',
+        //                 required: false,
+        //             },
+        //             {
+        //                 name: 'Job Title',
+        //                 type: 'shortText',
+        //                 aliasId: 'job_title',
+        //                 required: false,
+        //             },
+        //         ],
+        //     },
+        //     // "metadata": {"internalUserId": 123}
+        // }
         variables: {
             "type": "edit-pdf-template",
             "eid": castId,
@@ -619,6 +700,117 @@ app.post("/sitesVerify", async (req, resp) => {
     // res.send(outcome)
 })
 
+app.post("/updateWorkflow", (req, res) => {
+    let { weldEid, configData } = req.body
+
+    // console.log(JSON.stringify(signerFields, 'hh'))
+    let data = JSON.stringify(
+        {
+            query: `mutation UpdateWeld(
+                $eid: String!
+                $slug: String
+                $name: String
+                $visibility: String
+                $config: JSON
+                $configFile: Upload
+                $isArchived: Boolean
+                $expiresAt: String
+                $draftStep: String
+                $entryForgeId: Int
+                $entryButtonText: String
+                $entryButtonCopyLink: Boolean
+                $signatureEmailBody: JSON
+                $signatureEmailSubject: JSON
+                $dataDisplayTitle: JSON
+                $signatureProvider: String
+                $lockedTitleNew: String
+                $lockedDescriptionNew: String
+                $lockedTitleExisting: String
+                $lockedDescriptionExisting: String
+                $expireAfterDaysStart: Int
+                $expireAfterDaysComplete: Int
+                $planEid: String
+                $versionNumber: Int
+                $weldCompleteEmailRecipients: JSON
+                $mergePDFs: Boolean
+              ) {
+                updateWeld(
+                  eid: $eid
+                  slug: $slug
+                  name: $name
+                  visibility: $visibility
+                  config: $config
+                  configFile: $configFile
+                  isArchived: $isArchived
+                  expiresAt: $expiresAt
+                  draftStep: $draftStep
+                  entryForgeId: $entryForgeId
+                  entryButtonText: $entryButtonText
+                  entryButtonCopyLink: $entryButtonCopyLink
+                  signatureEmailBody: $signatureEmailBody
+                  signatureEmailSubject: $signatureEmailSubject
+                  dataDisplayTitle: $dataDisplayTitle
+                  signatureProvider: $signatureProvider
+                  lockedTitleNew: $lockedTitleNew
+                  lockedDescriptionNew: $lockedDescriptionNew
+                  lockedTitleExisting: $lockedTitleExisting
+                  lockedDescriptionExisting: $lockedDescriptionExisting
+                  expireAfterDaysStart: $expireAfterDaysStart
+                  expireAfterDaysComplete: $expireAfterDaysComplete
+                  planEid: $planEid
+                  versionNumber: $versionNumber
+                  weldCompleteEmailRecipients: $weldCompleteEmailRecipients
+                  mergePDFs: $mergePDFs
+                ) {
+                  id
+                  eid
+                  slug
+                  name
+                  title
+                  config
+                  visibility
+                  draftStep
+                  signatureProviderType
+                  updatedAt
+                  archivedAt
+                  expiresAt
+                  versionNumber
+                }
+              }     
+		  `,
+            variables: {
+                "eid": weldEid,
+                "config": configData
+            }
+        });
+
+    var config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: 'https://graphql.useanvil.com',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': basicAuth
+        },
+        data: data
+    };
+
+    axios(config)
+        .then(function async(response) {
+            // console.log(res, 'res')
+            // res.send(response.data)
+            res.send(response.data)
+
+            // console.log(JSON.stringify(response.data));
+        })
+        .catch(function (error) {
+
+            let { errors } = error
+            console.log(JSON.stringify(errors), "error", { ...error });
+            res.send(error)
+        });
+})
+
 app.post("/createWorkflow", async (req, res) => {
     let { castId, name } = req.body
     let data = JSON.stringify({
@@ -653,6 +845,18 @@ app.post("/createWorkflow", async (req, res) => {
                 slug
                 name
               }
+              casts {
+                id
+                eid
+                type
+                name
+                title
+                config
+                location
+                createdAt
+                updatedAt
+                versionNumber
+                }
               forges {
                 id
                 eid
@@ -666,21 +870,8 @@ app.post("/createWorkflow", async (req, res) => {
             "organizationEid": "f2AzCk56ltQW3xPZB2Rt",
             "castEid": castId,
             "name": name,
-            "visibility": "draft",
-            "draftStep": "pdf",
-            "signers": {
-                "signer1": {
-                    "name": "phani",
-                    "email": "phanik@ovahq.com",
-                    "label": "",
-                    "forgeID": "",
-                    "routingOrder": "",
-                    "signatureMode": "Embedded",
-                    "acceptEachField": true,
 
-                }
 
-            }
         }
     });
 
@@ -699,6 +890,7 @@ app.post("/createWorkflow", async (req, res) => {
         .then(function (response) {
             // console.log(res, 'res')
             res.send(response.data)
+            // res.send(response.data)
             // console.log(JSON.stringify(response.data));
         })
         .catch(function (error) {
