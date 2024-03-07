@@ -19,6 +19,13 @@ var quicksightClient = new AWS.Service({
 	apiConfig: require('aws-sdk/apis/quicksight-2018-04-01.min.json'),
 	region: 'us-west-2',
 });
+const SESConfig = {
+	apiVersion: "2018-04-01",
+	accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+	secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+	region: "us-east-1"
+}
+AWS.config.update(SESConfig);
 const app = express();
 app.use(express.json({ limit: "50mb", type: "application/json" }))
 app.use(express.urlencoded({ extended: true }));
