@@ -14,7 +14,8 @@ const cors = require('cors');
 const { request } = require('graphql-request');
 const bodyParser = require('body-parser')
 const AWS = require('aws-sdk');
-
+const dotenv = require('dotenv');
+dotenv.config();
 var quicksightClient = new AWS.Service({
 	apiConfig: require('aws-sdk/apis/quicksight-2018-04-01.min.json'),
 	region: 'us-west-2',
