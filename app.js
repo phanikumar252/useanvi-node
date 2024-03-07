@@ -13,8 +13,12 @@ const FormData = require('form-data');
 const cors = require('cors');
 const { request } = require('graphql-request');
 const bodyParser = require('body-parser')
+const AWS = require('aws-sdk');
 
-
+var quicksightClient = new AWS.Service({
+	apiConfig: require('aws-sdk/apis/quicksight-2018-04-01.min.json'),
+	region: 'us-west-2',
+});
 const app = express();
 app.use(express.json({ limit: "50mb", type: "application/json" }))
 app.use(express.urlencoded({ extended: true }));
@@ -1195,4 +1199,67 @@ app.post("/weldData", (req, res) => {
             res.send(error)
         });
 })
+app.get('/generateEmbeddedUrl', (req, res) => {
+	// let data = {
+	// 	"AllowedDomains": ["http://localhost:3000"],
+	// 	"ExperienceConfiguration": {
+	// 		"QuickSightConsole": {
+	// 			"FeatureConfigurations": {
+	// 				"StatePersistence": {
+	// 					"Enabled": true
+	// 				}
+	// 			},
+	// 			"InitialPath": "/start"
+	// 		}
+	// 	},
+	// 	"SessionLifetimeInMinutes": 600,
+	// 	"UserArn": "arn:aws:iam::068652499116:user/shantanu"
+	// }
+	// try {
+	// 	var config = {
+	// 		method: 'post',
+	// 		url: 'https://us-west-2.quicksight.aws.amazon.com/sn/accounts/068652499116/embed-url/registered-user',
+	// 		headers: {
+	// 			'Content-Type': 'application/json',
 
+	// 		},
+	// 		data: data
+	// 	};
+
+	// 	axios(config)
+	// 		.then(function (response) {
+	// 			console.log(res, 'res')
+	// 			res.send(response.data)
+	// 			// console.log(JSON.stringify(response.data));
+	// 		})
+	// 		.catch(function (error) {
+
+	// 			let { errors } = error
+	// 			console.log(JSON.stringify(errors), "error", { ...error });
+	// 			res.send(error)
+	// 		});
+	// }
+	// catch (e) {
+	// 	console.log(e, 'e')
+	// 	res.send(e)
+	// }
+	quicksightClient.generateEmbedUrlForRegisteredUser({
+		'AwsAccountId': '068652499116',
+		'ExperienceConfiguration': {
+			'QuickSightConsole': {
+				'InitialPath': '/start'
+			}
+		},
+		'UserArn': 'arn:aws:quicksight:us-west-2:068652499116:user/default/shantanu',
+		'AllowedDomains': ["http://localhost:3000", "https://app.curately.ai"],
+		'SessionLifetimeInMinutes': 100
+	}, function (err, data) {
+		console.log('Errors: ');
+		console.log(err);
+		if (data) {
+			res.send(data)
+		}
+		console.log('Response: ');
+		console.log(data);
+	});
+})
