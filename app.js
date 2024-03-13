@@ -305,7 +305,7 @@ app.post('/createTemplate', (req, resp) => {
     // file.filename = "payroll.pdf";
     var buf = Buffer.from(file.data, 'base64');
     let newFile = Anvil.prepareGraphQLFile(buf, {
-        filename: "payroll.pdf",
+        filename: file.filename,
         mimetype: "application/pdf"
     })
 
@@ -439,7 +439,7 @@ app.post('/editTemplate', (req, resp) => {
         "eid": castId,
         // "validUntil": "2024-06-12T01:43:50+00:00",
         "validForSeconds": 86400,
-        showFinishButton: false,
+
 
         // "metadata": {"internalUserId": 123}
     }
