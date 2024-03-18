@@ -202,7 +202,8 @@ app.get("/getTemplates", (request, response) => {
 app.post("/getTemplateFields", (req, res) => {
     const { eid } = req.body
     // console.log(req, 'reeee')
-    var data = JSON.stringify({
+    let variables = { eid, versionNumber: -3 }
+    anvilClient.requestGraphQL({
         query: `query CastQuery($eid: String!, $versionNumber: Int, $relatedOrganizationsActions: [String]) {
 			data: cast(eid: $eid, versionNumber: $versionNumber) {
 			  ...castFieldsFragment
@@ -261,36 +262,52 @@ app.post("/getTemplateFields", (req, res) => {
 			  __typename
 			}
 			__typename
-		  }
-		  `,
-        variables: { eid, versionNumber: -3 }
-    });
-
-    // var username = 'TbyeNvYb8Y9aS2P6T8PyIqslc5wSLS1Q';
-
-
-
-    var config = {
-        method: 'post',
-        maxBodyLength: Infinity,
-        url: 'https://graphql.useanvil.com',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': basicAuth
-        },
-        data: data
-    };
-
-    axios(config)
-        .then(function (response) {
-            // console.log(res, 'res')
-            res.send(response.data)
-            // console.log(JSON.stringify(response.data));
-        })
-        .catch(function (error) {
-            console.log(error);
+		  }`,
+        variables
+    },
+        { dataType: 'json' }).then((response) => {
+            res.send(response)
+        }).catch((error) => {
+            console.log(error, 'error')
             res.send(error)
-        });
+        })
+})
+
+app.post("/getTemplate", (req, res) => {
+    const { eid } = req.body
+    // console.log(req, 'reeee')
+    let variables = { eid }
+    anvilClient.requestGraphQL({
+        query: `query ($eid: String!) {
+            data: cast(eid: $eid) {
+                id
+                eid
+                type
+                name
+                title
+                config
+                location
+                createdAt
+                updatedAt
+                versionNumber
+                organization {
+                    id
+                    eid
+                    name
+                    slug
+                    subscribedPlanFeatures
+                }
+            }
+        }
+        `,
+        variables
+    },
+        { dataType: 'json' }).then((response) => {
+            res.send(response)
+        }).catch((error) => {
+            console.log(error, 'error')
+            res.send(error)
+        })
 })
 // const path = require('path')
 "C:\Users\Phani Kumar Ankem\Downloads\Compliance Forms (1).pdf"
@@ -440,8 +457,18 @@ app.post('/editTemplate', (req, resp) => {
         // "validUntil": "2024-06-12T01:43:50+00:00",
         "validForSeconds": 86400,
 
-
-        // "metadata": {"internalUserId": 123}
+        options: {
+            "mode": "preset-fields",
+            "pageTitle": "",
+            "title": "",
+            description: 'Please draw fields indicated below.',
+            selectionDescription:
+                'Select the field that best represents the box drawn.',
+            showPageTitleBar: false,
+            // finishButtonText: 'Custom text',
+            // selectionAddAnotherFieldText: 'Plz add another field',
+            fields: fieldData
+        }
     }
     let data = JSON.stringify({
         query: `mutation generateEmbedURL(
