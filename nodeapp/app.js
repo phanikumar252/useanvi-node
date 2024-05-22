@@ -380,6 +380,172 @@ app.post('/createTemplate', (req, resp) => {
 
 })
 
+app.post('/editTemplateDefault', (req, resp) => {
+
+    let { castId } = req.body
+    let variables = {
+        "type": "edit-pdf-template",
+        "eid": castId,
+        // "validUntil": "2024-06-12T01:43:50+00:00",
+        "validForSeconds": 86400,
+        options: {
+            "mode": "preset-fields",
+            "pageTitle": "",
+            "title": "",
+            description: 'Please draw fields indicated below.',
+            selectionDescription:
+                'Select the field that best represents the box drawn.',
+            showPageTitleBar: false,
+            // finishButtonText: 'Custom text',
+            // selectionAddAnotherFieldText: 'Plz add another field',
+
+        }
+
+    }
+    let data = JSON.stringify({
+        query: `mutation generateEmbedURL(
+			$type: String!,
+			$eid: String!,
+			$validUntil: String,
+			$validForSeconds: Int,
+			$options: JSON,
+			$metadata: JSON
+		  ) {
+			generateEmbedURL(
+			  type: $type,
+			  eid: $eid,
+			  validUntil: $validUntil,
+			  validForSeconds: $validForSeconds,
+			  options: $options,
+			  metadata: $metadata
+			) {
+			  requestTokenEid
+			  url
+			}
+		  }
+		  `,
+        // variables: {
+        //     "type": "edit-pdf-template",
+        //     "eid": castId,
+        //     // "validUntil": "2024-06-12T01:43:50+00:00",
+        //     "validForSeconds": 86400,
+        //     "options": {
+        //         "mode": "preset-fields",
+        //         "pageTitle": "Title of the page",
+        //         "title": "Sidebar title",
+        //         description: 'Please draw fields indicated below.',
+        //         selectionDescription:
+        //             'Select the field that best represents the box drawn.',
+        //         showPageTitleBar: false,
+        //         // finishButtonText: 'Custom text',
+        //         // selectionAddAnotherFieldText: 'Plz add another field',
+        //         fields: [
+        //             // * `aliasId` can be anything you'd like: https://www.useanvil.com/docs/api/fill-pdf/#field-ids
+        //             // * All types: https://www.useanvil.com/docs/api/fill-pdf/#all-field-types
+        //             {
+        //                 name: 'Full name',
+        //                 type: 'fullName',
+        //                 aliasId: 'name',
+        //                 required: false,
+
+        //                 // optional fields
+        //                 alignment: 'center', // `left`, `center`, `right`
+        //                 fontSize: '12',
+        //                 fontWeight: 'boldItalic', // 'normal', `bold`, `boldItalic`, `italic`
+        //                 fontFamily: 'Futura', // Any google font, 'Helvetica', 'Times new roman', 'Courier'
+        //                 textColor: '#a00000',
+        //             },
+        //             {
+        //                 name: 'Email',
+        //                 type: 'email',
+        //                 aliasId: 'email',
+        //                 required: false,
+        //             },
+        //             {
+        //                 name: 'Date of birth',
+        //                 type: 'date',
+        //                 aliasId: 'dob',
+        //                 required: false,
+
+        //                 // optional date fields:
+        //                 format: 'MMMM Do YYYY', // see moment.js docs
+        //             },
+        //             {
+        //                 name: 'Client signature',
+        //                 type: 'signature',
+        //                 aliasId: 'clientSignature',
+        //                 required: false,
+        //             },
+        //             {
+        //                 name: 'Sales signature',
+        //                 type: 'signature',
+        //                 aliasId: 'salesSignature',
+        //                 required: false,
+        //             },
+        //             {
+        //                 name: 'Client initials',
+        //                 type: 'initial',
+        //                 aliasId: 'clientInitials',
+        //                 required: false,
+        //             },
+        //             {
+        //                 name: 'Client signature date',
+        //                 type: 'signatureDate',
+        //                 aliasId: 'clientSignatureDate',
+        //                 required: false,
+        //             },
+        //             {
+        //                 name: 'Job Title',
+        //                 type: 'shortText',
+        //                 aliasId: 'job_title',
+        //                 required: false,
+        //             },
+        //         ],
+        //     },
+        //     // "metadata": {"internalUserId": 123}
+        // }
+        variables: {
+            "type": "edit-pdf-template",
+            "eid": castId,
+            // "validUntil": "2024-06-12T01:43:50+00:00",
+            "validForSeconds": 86400,
+
+            // "metadata": {"internalUserId": 123}
+        }
+    });
+
+    anvilClient.requestGraphQL({
+        query: `mutation generateEmbedURL(
+			$type: String!,
+			$eid: String!,
+			$validUntil: String,
+			$validForSeconds: Int,
+			$options: JSON,
+			$metadata: JSON
+		  ) {
+			generateEmbedURL(
+			  type: $type,
+			  eid: $eid,
+			  validUntil: $validUntil,
+			  validForSeconds: $validForSeconds,
+			  options: $options,
+			  metadata: $metadata
+			) {
+			  requestTokenEid
+			  url
+			}
+		  }`,
+        variables
+    },
+        { dataType: 'json' }).then((response) => {
+            resp.send(response)
+        }).catch((error) => {
+            console.log(error, 'error')
+            resp.send(error)
+        })
+
+})
+
 app.post('/deleteTemplate', (req, res) => {
     let { templateId } = req.body
     let data = JSON.stringify({
