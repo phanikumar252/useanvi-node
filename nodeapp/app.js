@@ -387,19 +387,8 @@ app.post('/editTemplateDefault', (req, resp) => {
         "type": "edit-pdf-template",
         "eid": castId,
         // "validUntil": "2024-06-12T01:43:50+00:00",
-        "validForSeconds": 86400,
-        options: {
-            "mode": "preset-fields",
-            "pageTitle": "",
-            "title": "",
-            description: 'Please draw fields indicated below.',
-            selectionDescription:
-                'Select the field that best represents the box drawn.',
-            showPageTitleBar: false,
-            // finishButtonText: 'Custom text',
-            // selectionAddAnotherFieldText: 'Plz add another field',
-
-        }
+        "validForSeconds": 86400
+       
 
     }
     let data = JSON.stringify({
