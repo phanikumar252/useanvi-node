@@ -866,7 +866,7 @@ app.post("/sitesVerify", async (req, resp) => {
 
     console.log(req, "req", req.body)
     let formData = new FormData()
-    formData.append('secret', "0x4AAAAAAAR-XZXd7d7O5vMC8XO9zvRP_gI");
+    formData.append('secret', "0x4AAAAAAAfQmTVdiKl7fTgxwYKXMxcMbNw");
     formData.append('response', token);
 
     // console.log(JSON.stringify(formData), 'formData')
